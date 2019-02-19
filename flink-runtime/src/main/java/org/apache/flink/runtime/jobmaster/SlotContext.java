@@ -37,5 +37,10 @@ public interface SlotContext extends SlotInfo {
 	 */
 	TaskManagerGateway getTaskManagerGateway();
 
+	/**
+	 * Gets the resource profile of the underlying allocated slot
+	 *
+	 * @return The resource profile that can be used to define if the slot has the requested resources
+	 */
 	ResourceProfile getResourceProfile();
 }
