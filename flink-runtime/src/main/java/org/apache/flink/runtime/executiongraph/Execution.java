@@ -515,7 +515,7 @@ public class Execution implements AccessExecution, Archiveable<ArchivedExecution
 							toSchedule,
 							queued,
 							new SlotProfile(
-								ResourceProfile.UNKNOWN,
+								ResourceProfile.fromResourceSpec(vertex.getJobVertex().getJobVertex().getPreferredResources(), 0),
 								preferredLocations,
 								previousAllocationIDs,
 								allPreviousExecutionGraphAllocationIds),
