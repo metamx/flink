@@ -18,6 +18,7 @@
 
 package org.apache.flink.runtime.jobmaster;
 
+import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.jobmanager.slots.TaskManagerGateway;
 
 /**
@@ -35,4 +36,11 @@ public interface SlotContext extends SlotInfo {
 	 * @return The gateway that can be used to send messages to the TaskManager.
 	 */
 	TaskManagerGateway getTaskManagerGateway();
+
+	/**
+	 * Gets the resource profile of the underlying allocated slot
+	 *
+	 * @return The resource profile that can be used to define if the slot has the requested resources
+	 */
+	ResourceProfile getResourceProfile();
 }

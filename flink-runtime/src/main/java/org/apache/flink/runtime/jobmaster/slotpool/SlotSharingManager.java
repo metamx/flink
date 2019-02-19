@@ -188,8 +188,13 @@ public class SlotSharingManager {
 			slotProfile,
 			() -> resolvedRootSlotsValues.stream().flatMap(Collection::stream),
 			(MultiTaskSlot multiTaskSlot) -> multiTaskSlot.getSlotContextFuture().join(),
-			(MultiTaskSlot multiTaskSlot) -> !multiTaskSlot.contains(groupId),
-			MultiTaskSlotLocality::of);
+			(MultiTaskSlot multiTaskSlot) ->
+				!multiTaskSlot.contains(groupId) && multiTaskSlot.getSlotContextFuture()
+																 .join()
+																 .getResourceProfile()
+																 .isMatching(slotProfile.getResourceProfile()),
+			MultiTaskSlotLocality::of
+		);
 	}
 
 	/**
