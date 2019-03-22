@@ -3,6 +3,7 @@ package org.apache.flink.kubernetes;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.kubernetes.client.KubernetesClient;
 import org.apache.flink.kubernetes.client.KubernetesClientImpl;
+import org.apache.flink.kubernetes.client.exception.KubernetesClientException;
 import org.apache.flink.runtime.clusterframework.ApplicationStatus;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
 import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
@@ -28,6 +29,10 @@ import java.util.Map;
 
 public class KubernetesResourceManager extends ResourceManager<ResourceID>
 {
+	public final static String FLINK_TM_IMAGE = "FLINK_TM_IMAGE";
+	public final static String FLINK_NAMESPACE = "FLINK_NAMESPACE";
+	public final static String FLINK_TM_RESOURCE_ID = "FLINK_TM_RESOURCE_ID";
+	public final static String FLINK_CLASS_TO_RUN = "FLINK_CLASS_TO_RUN";
 
 	protected static final Logger LOG = LoggerFactory.getLogger(KubernetesResourceManager.class);
 
@@ -94,14 +99,19 @@ public class KubernetesResourceManager extends ResourceManager<ResourceID>
 	public Collection<ResourceProfile> startNewWorker(ResourceProfile resourceProfile)
 	{
 		LOG.info("Starting a new worker.");
-		nodeManagerClient.createClusterPod(resourceProfile);
+		try {
+			nodeManagerClient.createClusterPod(resourceProfile);
+		}
+		catch (KubernetesClientException e) {
+			throw new RuntimeException("Could not start a new worker", e);
+		}
 		return Collections.singletonList(resourceProfile);
 	}
 
 	@Override
 	public boolean stopWorker(ResourceID worker)
 	{
-		LOG.info("Stopping worker {}.", worker.getResourceID());
+		LOG.info("Stopping worker [{}].", worker.getResourceID());
 		try {
 			nodeManagerClient.terminateClusterPod(worker);
 			return true;
@@ -114,7 +124,7 @@ public class KubernetesResourceManager extends ResourceManager<ResourceID>
 	@Override
 	protected ResourceID workerStarted(ResourceID resourceID)
 	{
-		// TODO Hooray it started. Remove from pending
+		// Hooray it started!
 		return resourceID;
 	}
 }

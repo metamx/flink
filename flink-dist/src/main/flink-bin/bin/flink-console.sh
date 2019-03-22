@@ -56,6 +56,8 @@ case $SERVICE in
     ;;
 esac
 
+CLASS_TO_RUN = ${FLINK_CLASS_TO_RUN:-$CLASS_TO_RUN}
+
 FLINK_TM_CLASSPATH=`constructFlinkClassPath`
 
 log_setting=("-Dlog4j.configuration=file:${FLINK_CONF_DIR}/log4j-console.properties" "-Dlogback.configurationFile=file:${FLINK_CONF_DIR}/logback-console.xml")

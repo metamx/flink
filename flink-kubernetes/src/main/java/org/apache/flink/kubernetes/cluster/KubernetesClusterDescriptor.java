@@ -44,6 +44,7 @@ import java.util.UUID;
 
 /**
  * Kubernetes specific {@link ClusterDescriptor} implementation.
+ * This class is responsible for cluster creation from scratch
  */
 public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
 
@@ -111,6 +112,7 @@ public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
 	private ClusterClient<String> deployClusterInternal(String clusterId, List<String> args) throws ClusterDeploymentException {
 		try {
 			Endpoint clusterEndpoint = this.client.createClusterService();
+			this.client.createClusterPod(null);
 			return this.createClusterEndpoint(clusterEndpoint, clusterId);
 		} catch (Exception e) {
 			this.client.logException(e);
