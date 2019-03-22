@@ -6,12 +6,12 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
+import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.util.Config;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.kubernetes.KubernetesResourceManager;
 import org.apache.flink.kubernetes.client.exception.KubernetesClientException;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
@@ -28,28 +28,24 @@ import java.util.Map;
 
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
-public class KubernetesClientImpl implements KubernetesClient
+public class DefaultKubernetesClient implements KubernetesClient
 {
 	private static final Logger LOG = LoggerFactory.getLogger(KubernetesClient.class);
 
-	private final Configuration configuration;
-	private final Map<String, String> environment;
 	private final CoreV1Api coreV1Api;
 	private final String flinkTMImageName;
 	private final String flinkNamespace;
 	private final Map<String, ResourceProfile> podResourceProfiles = new HashMap<>();
 
-	public KubernetesClientImpl(Configuration configuration, Map<String, String> environment) throws IOException
+	public DefaultKubernetesClient(Map<String, String> environment) throws IOException
 	{
-		this.configuration = configuration;
-		this.environment = environment;
 		// Default user is used for managing deployments and their pods
 		// Make sure default user has enough permissions for doing that
 		final ApiClient apiClient = Config.defaultClient();
 		io.kubernetes.client.Configuration.setDefaultApiClient(apiClient);
 		this.coreV1Api = new CoreV1Api(apiClient);
-		this.flinkNamespace = checkNotNull(this.environment.get(KubernetesResourceManager.FLINK_NAMESPACE));
-		this.flinkTMImageName = checkNotNull(this.environment.get(KubernetesResourceManager.FLINK_TM_IMAGE));
+		this.flinkNamespace = checkNotNull(environment.get(KubernetesResourceManager.FLINK_NAMESPACE));
+		this.flinkTMImageName = checkNotNull(environment.get(KubernetesResourceManager.FLINK_TM_IMAGE));
 	}
 
 	@Override
@@ -134,7 +130,8 @@ public class KubernetesClientImpl implements KubernetesClient
 
 		LOG.info("Terminating a cluster pod [{}] for a resource profile [{}]", podName, resourceID);
 		try {
-			coreV1Api.deleteNamespacedPod(podName, flinkNamespace, null, null, null, 0, null, null);
+			V1DeleteOptions body = new V1DeleteOptions().gracePeriodSeconds(0L).orphanDependents(false);
+			coreV1Api.deleteNamespacedPod(podName, flinkNamespace, body, null, null, null, null, null);
 			podResourceProfiles.remove(podName);
 		}
 		catch (ApiException e) {

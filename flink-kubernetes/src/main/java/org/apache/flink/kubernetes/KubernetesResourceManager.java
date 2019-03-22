@@ -2,7 +2,7 @@ package org.apache.flink.kubernetes;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.kubernetes.client.KubernetesClient;
-import org.apache.flink.kubernetes.client.KubernetesClientImpl;
+import org.apache.flink.kubernetes.client.DefaultKubernetesClient;
 import org.apache.flink.kubernetes.client.exception.KubernetesClientException;
 import org.apache.flink.runtime.clusterframework.ApplicationStatus;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
@@ -80,7 +80,7 @@ public class KubernetesResourceManager extends ResourceManager<ResourceID>
 	protected void initialize() throws ResourceManagerException
 	{
 		try{
-			nodeManagerClient = new KubernetesClientImpl(configuration, environment);
+			nodeManagerClient = new DefaultKubernetesClient(environment);
 		} catch (IOException e) {
 			throw new ResourceManagerException("Error while initializing K8s client", e);
 		}
