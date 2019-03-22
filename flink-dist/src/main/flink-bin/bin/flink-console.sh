@@ -56,7 +56,7 @@ case $SERVICE in
     ;;
 esac
 
-CLASS_TO_RUN = ${FLINK_CLASS_TO_RUN:-$CLASS_TO_RUN}
+CLASS_TO_RUN=${FLINK_CLASS_TO_RUN:-$CLASS_TO_RUN}
 
 FLINK_TM_CLASSPATH=`constructFlinkClassPath`
 
