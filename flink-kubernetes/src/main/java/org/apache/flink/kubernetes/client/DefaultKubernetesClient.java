@@ -43,6 +43,7 @@ public class DefaultKubernetesClient implements KubernetesClient {
 	private final Map<String, ResourceProfile> podResourceProfiles = new HashMap<>();
 
 	public DefaultKubernetesClient(Map<String, String> environment) throws IOException {
+		//TODO: add a property to specify a user
 		// Default user is used for managing deployments and their pods
 		// Make sure default user has enough permissions for doing that
 		final ApiClient apiClient = Config.defaultClient();
@@ -61,8 +62,8 @@ public class DefaultKubernetesClient implements KubernetesClient {
 	public void createClusterPod(ResourceProfile resourceProfile) throws KubernetesClientException {
 		final ResourceID resourceID = ResourceID.generate();
 		final String podName = getPodName(resourceID);
-
 		LOG.info("Creating a cluster pod [{}] for a resource profile [{}]", podName, resourceProfile);
+		//TODO: Place template into a resource file or somewhere into config file
 		V1Pod body = new V1Pod()
 			.apiVersion("v1")
 			.kind("Pod")
@@ -90,6 +91,7 @@ public class DefaultKubernetesClient implements KubernetesClient {
 							}}
 					))
 			.spec(
+				//TODO: Add resource spec (CPU, Memory) and an option to turn the feature on/off
 				new V1PodSpec()
 					.containers(Collections.singletonList(
 						new V1Container()
@@ -126,25 +128,9 @@ public class DefaultKubernetesClient implements KubernetesClient {
 	@Override
 	public void terminateClusterPod(ResourceID resourceID) throws KubernetesClientException {
 		final String podName = getPodName(resourceID);
-
 		LOG.info("Terminating a cluster pod [{}] for a resource profile [{}]", podName, resourceID);
-		try {
-			V1DeleteOptions body = new V1DeleteOptions().gracePeriodSeconds(0L).orphanDependents(false);
-			coreV1Api.deleteNamespacedPod(podName, flinkNamespace, body, null, null, null, null, null);
-			podResourceProfiles.remove(podName);
-		} catch (ApiException e) {
-			if (e.getMessage().equals("Not Found")) {
-				LOG.warn("Could not delete a pod [{}] as it was not found", podName);
-			} else {
-				final String message =
-					String.format("Could not delete a pod [%s] for resource profile [%s]", podName, flinkNamespace);
-				throw new KubernetesClientException(message, e);
-			}
-		} catch (JsonSyntaxException e) {
-			// It's a known issue until the Swagger spec is updated to OpenAPI 3.0
-			// https://github.com/kubernetes-client/java/issues/86
-			// Simply ignoring the exception
-		}
+		deleteNamespacedPod(podName);
+		podResourceProfiles.remove(podName);
 	}
 
 	@Override
@@ -153,9 +139,9 @@ public class DefaultKubernetesClient implements KubernetesClient {
 		podResourceProfiles.forEach(
 			(podName, resourceProfile) -> {
 				try {
-					coreV1Api.deleteNamespacedPod(podName, flinkNamespace, null, null, null, 0, null, null);
-				} catch (ApiException e) {
-					LOG.error("Could not delete a pod [{}]", podName, e);
+					deleteNamespacedPod(podName);
+				} catch (KubernetesClientException e) {
+					LOG.warn("Could not delete a pod [{}]", podName);
 				}
 			}
 		);
@@ -179,5 +165,24 @@ public class DefaultKubernetesClient implements KubernetesClient {
 
 	private String getPodName(ResourceID resourceId) {
 		return "flink-taskmanager-" + resourceId.getResourceIdString();
+	}
+
+	private void deleteNamespacedPod(String podName) throws KubernetesClientException {
+		try {
+			V1DeleteOptions body = new V1DeleteOptions().gracePeriodSeconds(0L).orphanDependents(false);
+			coreV1Api.deleteNamespacedPod(podName, flinkNamespace, body, null, null, null, null, null);
+		} catch (ApiException e) {
+			if (e.getMessage().equals("Not Found")) {
+				LOG.warn("Could not delete a pod [{}] as it was not found", podName);
+			} else {
+				final String message =
+					String.format("Could not delete a pod [%s] for resource profile [%s]", podName, flinkNamespace);
+				throw new KubernetesClientException(message, e);
+			}
+		} catch (JsonSyntaxException e) {
+			// It's a known issue until the Swagger spec is updated to OpenAPI 3.0
+			// https://github.com/kubernetes-client/java/issues/86
+			// Simply ignoring the exception
+		}
 	}
 }

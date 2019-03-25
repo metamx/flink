@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 
 /**
  * This class is the executable entry point for running a TaskExecutor in a Kubernetes container.
+ * It duplicates an entry point of {@link org.apache.flink.runtime.taskexecutor.TaskManagerRunner}
  */
 public class KubernetesTaskManagerRunner {
 	private static final Logger LOG = LoggerFactory.getLogger(KubernetesTaskManagerRunner.class);
