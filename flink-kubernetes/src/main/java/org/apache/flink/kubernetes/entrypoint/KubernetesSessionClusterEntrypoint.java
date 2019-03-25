@@ -36,7 +36,7 @@ import org.apache.flink.runtime.util.SignalHandler;
  */
 public class KubernetesSessionClusterEntrypoint extends SessionClusterEntrypoint {
 
-	public KubernetesSessionClusterEntrypoint(Configuration configuration) {
+	private KubernetesSessionClusterEntrypoint(Configuration configuration) {
 		super(configuration);
 	}
 
@@ -61,7 +61,6 @@ public class KubernetesSessionClusterEntrypoint extends SessionClusterEntrypoint
 			commandLineParser.printHelp(KubernetesSessionClusterEntrypoint.class.getSimpleName());
 			System.exit(1);
 		}
-
 
 		LOG.info("Started {}.", KubernetesSessionClusterEntrypoint.class.getSimpleName());
 

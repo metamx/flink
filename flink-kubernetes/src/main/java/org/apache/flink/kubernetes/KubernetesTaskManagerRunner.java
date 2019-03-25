@@ -10,6 +10,7 @@ import org.apache.flink.runtime.util.EnvironmentInformation;
 import org.apache.flink.runtime.util.JvmShutdownSafeguard;
 import org.apache.flink.runtime.util.SignalHandler;
 import org.apache.flink.util.ExceptionUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,14 +23,17 @@ import java.util.concurrent.Callable;
 /**
  * This class is the executable entry point for running a TaskExecutor in a Kubernetes container.
  */
-public class KubernetesTaskManagerRunner
-{
-	protected static final Logger LOG = LoggerFactory.getLogger(KubernetesTaskManagerRunner.class);
+public class KubernetesTaskManagerRunner {
+	private static final Logger LOG = LoggerFactory.getLogger(KubernetesTaskManagerRunner.class);
 
-	/** The process environment variables. */
+	/**
+	 * The process environment variables.
+	 */
 	private static final Map<String, String> ENV = System.getenv();
 
-	/** The exit code returned if the initialization of the Kubernetes task executor runner failed. */
+	/**
+	 * The exit code returned if the initialization of the Kubernetes task executor runner failed.
+	 */
 	private static final int INIT_ERROR_EXIT_CODE = 31;
 
 	// ------------------------------------------------------------------------
@@ -41,8 +45,7 @@ public class KubernetesTaskManagerRunner
 	 *
 	 * @param args The command line arguments.
 	 */
-	public static void main(String[] args) throws Exception
-	{
+	public static void main(String[] args) throws Exception {
 		EnvironmentInformation.logEnvironmentInfo(LOG, "TaskManager", args);
 		SignalHandler.register(LOG);
 		JvmShutdownSafeguard.installAsShutdownHook(LOG);
@@ -61,7 +64,7 @@ public class KubernetesTaskManagerRunner
 			FileSystem.initialize(configuration);
 		} catch (IOException e) {
 			throw new IOException("Error while setting the default " +
-								  "filesystem scheme from configuration.", e);
+				"filesystem scheme from configuration.", e);
 		}
 
 		SecurityUtils.install(new SecurityConfiguration(configuration));
@@ -74,8 +77,7 @@ public class KubernetesTaskManagerRunner
 				TaskManagerRunner.runTaskManager(configuration, new ResourceID(getContainerId()));
 				return null;
 			});
-		}
-		catch (Throwable t) {
+		} catch (Throwable t) {
 			final Throwable strippedThrowable = ExceptionUtils.stripException(t, UndeclaredThrowableException.class);
 			// make sure that everything whatever ends up in the log
 			LOG.error("Kubernetes TaskManager initialization failed.", strippedThrowable);
@@ -83,14 +85,12 @@ public class KubernetesTaskManagerRunner
 		}
 	}
 
-
-	private static String getContainerId()
-	{
+	private static String getContainerId() {
 		if (ENV.containsKey(KubernetesResourceManager.FLINK_TM_RESOURCE_ID)) {
 			return ENV.get(KubernetesResourceManager.FLINK_TM_RESOURCE_ID);
 		} else {
 			LOG.warn("ResourceID env variable {} is not found. Generating resource id",
-					 KubernetesResourceManager.FLINK_TM_RESOURCE_ID);
+				KubernetesResourceManager.FLINK_TM_RESOURCE_ID);
 			return ResourceID.generate().getResourceIdString();
 		}
 	}

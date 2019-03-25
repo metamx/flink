@@ -18,9 +18,9 @@
 
 package org.apache.flink.kubernetes.client;
 
+import org.apache.flink.kubernetes.client.exception.KubernetesClientException;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
 import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
-import org.apache.flink.kubernetes.client.exception.KubernetesClientException;
 
 /**
  * The client to talk with kubernetes.
@@ -39,7 +39,7 @@ public interface KubernetesClient extends AutoCloseable {
 
 
 	/**
-	 * Terminate a cluster pod
+	 * Terminate a cluster pod.
 	 * @param resourceID cluster pod id
 	 */
 	void terminateClusterPod(ResourceID resourceID) throws KubernetesClientException;

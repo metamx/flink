@@ -1,8 +1,8 @@
 package org.apache.flink.kubernetes;
 
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.kubernetes.client.KubernetesClient;
 import org.apache.flink.kubernetes.client.DefaultKubernetesClient;
+import org.apache.flink.kubernetes.client.KubernetesClient;
 import org.apache.flink.kubernetes.client.exception.KubernetesClientException;
 import org.apache.flink.runtime.clusterframework.ApplicationStatus;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
@@ -18,28 +18,33 @@ import org.apache.flink.runtime.resourcemanager.exceptions.ResourceManagerExcept
 import org.apache.flink.runtime.resourcemanager.slotmanager.SlotManager;
 import org.apache.flink.runtime.rpc.FatalErrorHandler;
 import org.apache.flink.runtime.rpc.RpcService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public class KubernetesResourceManager extends ResourceManager<ResourceID>
-{
-	public final static String FLINK_TM_IMAGE = "FLINK_TM_IMAGE";
-	public final static String FLINK_NAMESPACE = "FLINK_NAMESPACE";
-	public final static String FLINK_TM_RESOURCE_ID = "FLINK_TM_RESOURCE_ID";
-	public final static String FLINK_CLASS_TO_RUN = "FLINK_CLASS_TO_RUN";
+/**
+ * Kubernetes Resource Manager.
+ */
+public class KubernetesResourceManager extends ResourceManager<ResourceID> {
+	public static final String FLINK_TM_IMAGE = "FLINK_TM_IMAGE";
+	public static final String FLINK_NAMESPACE = "FLINK_NAMESPACE";
+	public static final String FLINK_TM_RESOURCE_ID = "FLINK_TM_RESOURCE_ID";
+	public static final String FLINK_CLASS_TO_RUN = "FLINK_CLASS_TO_RUN";
 
-	protected static final Logger LOG = LoggerFactory.getLogger(KubernetesResourceManager.class);
+	private static final Logger LOG = LoggerFactory.getLogger(KubernetesResourceManager.class);
 
-	private final Configuration configuration;
 	private final Map<String, String> environment;
 
-	/** Client to communicate with the Node manager and launch TaskExecutor processes. */
+	/**
+	 * Client to communicate with the Node manager and launch TaskExecutor processes.
+	 */
 	private KubernetesClient nodeManagerClient;
 
 	public KubernetesResourceManager(
@@ -55,10 +60,8 @@ public class KubernetesResourceManager extends ResourceManager<ResourceID>
 		JobLeaderIdService jobLeaderIdService,
 		ClusterInformation clusterInformation,
 		FatalErrorHandler fatalErrorHandler,
-		@Nullable String webInterfaceUrl,
 		JobManagerMetricGroup jobManagerMetricGroup
-	)
-	{
+	) {
 		super(
 			rpcService,
 			resourceManagerEndpointId,
@@ -72,14 +75,12 @@ public class KubernetesResourceManager extends ResourceManager<ResourceID>
 			fatalErrorHandler,
 			jobManagerMetricGroup
 		);
-		this.configuration = flinkConfig;
 		this.environment = env;
 	}
 
 	@Override
-	protected void initialize() throws ResourceManagerException
-	{
-		try{
+	protected void initialize() throws ResourceManagerException {
+		try {
 			nodeManagerClient = new DefaultKubernetesClient(environment);
 		} catch (IOException e) {
 			throw new ResourceManagerException("Error while initializing K8s client", e);
@@ -89,28 +90,24 @@ public class KubernetesResourceManager extends ResourceManager<ResourceID>
 	@Override
 	protected void internalDeregisterApplication(
 		ApplicationStatus finalStatus, @Nullable String optionalDiagnostics
-	) throws ResourceManagerException
-	{
+	) {
 		LOG.info("Shutting down and cleaning the cluster up.");
 		nodeManagerClient.stopAndCleanupCluster(null);
 	}
 
 	@Override
-	public Collection<ResourceProfile> startNewWorker(ResourceProfile resourceProfile)
-	{
+	public Collection<ResourceProfile> startNewWorker(ResourceProfile resourceProfile) {
 		LOG.info("Starting a new worker.");
 		try {
 			nodeManagerClient.createClusterPod(resourceProfile);
-		}
-		catch (KubernetesClientException e) {
+		} catch (KubernetesClientException e) {
 			throw new RuntimeException("Could not start a new worker", e);
 		}
 		return Collections.singletonList(resourceProfile);
 	}
 
 	@Override
-	public boolean stopWorker(ResourceID worker)
-	{
+	public boolean stopWorker(ResourceID worker) {
 		LOG.info("Stopping worker [{}].", worker.getResourceID());
 		try {
 			nodeManagerClient.terminateClusterPod(worker);
@@ -122,8 +119,7 @@ public class KubernetesResourceManager extends ResourceManager<ResourceID>
 	}
 
 	@Override
-	protected ResourceID workerStarted(ResourceID resourceID)
-	{
+	protected ResourceID workerStarted(ResourceID resourceID) {
 		// Hooray it started!
 		return resourceID;
 	}

@@ -1,6 +1,5 @@
 package org.apache.flink.kubernetes.entrypoint;
 
-
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.kubernetes.KubernetesResourceManager;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
@@ -18,8 +17,10 @@ import org.apache.flink.runtime.rpc.RpcService;
 
 import javax.annotation.Nullable;
 
-public enum KubernetesResourceManagerFactory implements ResourceManagerFactory<ResourceID>
-{
+/**
+ * Kubernetes Resource Manager Factory.
+ */
+public enum KubernetesResourceManagerFactory implements ResourceManagerFactory<ResourceID> {
 	INSTANCE;
 
 	@Override
@@ -34,8 +35,7 @@ public enum KubernetesResourceManagerFactory implements ResourceManagerFactory<R
 		ClusterInformation clusterInformation,
 		@Nullable String webInterfaceUrl,
 		JobManagerMetricGroup jobManagerMetricGroup
-	) throws Exception
-	{
+	) throws Exception {
 		final ResourceManagerRuntimeServicesConfiguration rmServicesConfiguration = ResourceManagerRuntimeServicesConfiguration
 			.fromConfiguration(configuration);
 		final ResourceManagerRuntimeServices rmRuntimeServices = ResourceManagerRuntimeServices.fromConfiguration(
@@ -57,7 +57,6 @@ public enum KubernetesResourceManagerFactory implements ResourceManagerFactory<R
 			rmRuntimeServices.getJobLeaderIdService(),
 			clusterInformation,
 			fatalErrorHandler,
-			webInterfaceUrl,
 			jobManagerMetricGroup
 		);
 	}

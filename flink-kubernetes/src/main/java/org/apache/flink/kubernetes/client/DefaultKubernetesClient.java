@@ -1,5 +1,10 @@
 package org.apache.flink.kubernetes.client;
 
+import org.apache.flink.kubernetes.KubernetesResourceManager;
+import org.apache.flink.kubernetes.client.exception.KubernetesClientException;
+import org.apache.flink.runtime.clusterframework.types.ResourceID;
+import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
+
 import com.google.gson.JsonSyntaxException;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -12,13 +17,8 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.util.Config;
-import org.apache.flink.kubernetes.KubernetesResourceManager;
-import org.apache.flink.kubernetes.client.exception.KubernetesClientException;
-import org.apache.flink.runtime.clusterframework.types.ResourceID;
-import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.NotImplementedError;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -26,10 +26,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import scala.NotImplementedError;
+
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
-public class DefaultKubernetesClient implements KubernetesClient
-{
+/**
+ * Kubernetes Client.
+ * It uses default service client to operate with kubernetes abstractions.
+ */
+public class DefaultKubernetesClient implements KubernetesClient {
 	private static final Logger LOG = LoggerFactory.getLogger(KubernetesClient.class);
 
 	private final CoreV1Api coreV1Api;
@@ -37,8 +42,7 @@ public class DefaultKubernetesClient implements KubernetesClient
 	private final String flinkNamespace;
 	private final Map<String, ResourceProfile> podResourceProfiles = new HashMap<>();
 
-	public DefaultKubernetesClient(Map<String, String> environment) throws IOException
-	{
+	public DefaultKubernetesClient(Map<String, String> environment) throws IOException {
 		// Default user is used for managing deployments and their pods
 		// Make sure default user has enough permissions for doing that
 		final ApiClient apiClient = Config.defaultClient();
@@ -49,14 +53,12 @@ public class DefaultKubernetesClient implements KubernetesClient
 	}
 
 	@Override
-	public Endpoint createClusterService()
-	{
+	public Endpoint createClusterService() {
 		throw new NotImplementedError();
 	}
 
 	@Override
-	public void createClusterPod(ResourceProfile resourceProfile) throws KubernetesClientException
-	{
+	public void createClusterPod(ResourceProfile resourceProfile) throws KubernetesClientException {
 		final ResourceID resourceID = ResourceID.generate();
 		final String podName = getPodName(resourceID);
 
@@ -67,8 +69,7 @@ public class DefaultKubernetesClient implements KubernetesClient
 			.metadata(
 				new V1ObjectMeta()
 					.name(podName)
-					.labels(new HashMap<String, String>()
-							{{
+					.labels(new HashMap<String, String>() {{
 								put("app", "flink");
 								put("component", "taskmanager");
 								put("role", "taskmanager");
@@ -116,16 +117,14 @@ public class DefaultKubernetesClient implements KubernetesClient
 		try {
 			coreV1Api.createNamespacedPod(flinkNamespace, body, false, null, null);
 			podResourceProfiles.put(podName, resourceProfile);
-		}
-		catch (ApiException e) {
+		} catch (ApiException e) {
 			final String message = String.format("Cannot create a pod for resource profile [%s]", resourceProfile);
 			throw new KubernetesClientException(message, e);
 		}
 	}
 
 	@Override
-	public void terminateClusterPod(ResourceID resourceID) throws KubernetesClientException
-	{
+	public void terminateClusterPod(ResourceID resourceID) throws KubernetesClientException {
 		final String podName = getPodName(resourceID);
 
 		LOG.info("Terminating a cluster pod [{}] for a resource profile [{}]", podName, resourceID);
@@ -133,8 +132,7 @@ public class DefaultKubernetesClient implements KubernetesClient
 			V1DeleteOptions body = new V1DeleteOptions().gracePeriodSeconds(0L).orphanDependents(false);
 			coreV1Api.deleteNamespacedPod(podName, flinkNamespace, body, null, null, null, null, null);
 			podResourceProfiles.remove(podName);
-		}
-		catch (ApiException e) {
+		} catch (ApiException e) {
 			if (e.getMessage().equals("Not Found")) {
 				LOG.warn("Could not delete a pod [{}] as it was not found", podName);
 			} else {
@@ -142,8 +140,7 @@ public class DefaultKubernetesClient implements KubernetesClient
 					String.format("Could not delete a pod [%s] for resource profile [%s]", podName, flinkNamespace);
 				throw new KubernetesClientException(message, e);
 			}
-		}
-		catch (JsonSyntaxException e) {
+		} catch (JsonSyntaxException e) {
 			// It's a known issue until the Swagger spec is updated to OpenAPI 3.0
 			// https://github.com/kubernetes-client/java/issues/86
 			// Simply ignoring the exception
@@ -151,15 +148,13 @@ public class DefaultKubernetesClient implements KubernetesClient
 	}
 
 	@Override
-	public void stopAndCleanupCluster(String clusterId)
-	{
+	public void stopAndCleanupCluster(String clusterId) {
 		LOG.info("Stopping the cluster and deleting all its task manager pods");
 		podResourceProfiles.forEach(
 			(podName, resourceProfile) -> {
 				try {
 					coreV1Api.deleteNamespacedPod(podName, flinkNamespace, null, null, null, 0, null, null);
-				}
-				catch (ApiException e) {
+				} catch (ApiException e) {
 					LOG.error("Could not delete a pod [{}]", podName, e);
 				}
 			}
@@ -168,25 +163,21 @@ public class DefaultKubernetesClient implements KubernetesClient
 	}
 
 	@Override
-	public void logException(Exception e)
-	{
+	public void logException(Exception e) {
 		LOG.error("Exception occurred", e);
 	}
 
 	@Override
-	public Endpoint getResetEndpoint(String flinkClusterId)
-	{
+	public Endpoint getResetEndpoint(String flinkClusterId) {
 		throw new NotImplementedError();
 	}
 
 	@Override
-	public void close()
-	{
+	public void close() {
 		throw new NotImplementedError();
 	}
 
-	private String getPodName(ResourceID resourceId)
-	{
+	private String getPodName(ResourceID resourceId) {
 		return "flink-taskmanager-" + resourceId.getResourceIdString();
 	}
 }
