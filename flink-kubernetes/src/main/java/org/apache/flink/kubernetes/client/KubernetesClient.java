@@ -45,7 +45,7 @@ public interface KubernetesClient extends AutoCloseable {
 	void terminateClusterPod(ResourceID resourceID) throws KubernetesClientException;
 
 	/**
-	 * stop cluster and clean up all resources, include services, auxiliary services and all running pods.
+	 * Stop cluster and clean up all resources, include services, auxiliary services and all running pods.
 	 * */
 	void stopAndCleanupCluster(String clusterId);
 
@@ -55,7 +55,7 @@ public interface KubernetesClient extends AutoCloseable {
 	void logException(Exception e);
 
 	/**
-	 * retrieval rest endpoint of the giving flink clusterId.
+	 * Retrieval rest endpoint of the giving flink clusterId.
 	 */
 	Endpoint getResetEndpoint(String flinkClusterId);
 }

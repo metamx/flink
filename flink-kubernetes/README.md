@@ -13,11 +13,12 @@ Example:
 kubectl create -f jobmanager-deployment.yaml
 kubectl create -f jobmanager-service.yaml
 ```
-That creates the deployment with one job manager and a service around it that exposes the job manager.
+That creates the deployment with one job manager and a service around it that exposes 
+(ClusterIP, NodePort, LoadBalancer, ExternalName) the job manager.
 
 ## Task Manager
 Task manager is a temporary essence and is created (and deleted) by a job manager for a particular slot. 
-No deployments/jobs/services are created for a task manager only pods. 
+No deployments/jobs/services are created for a task manager, only pods. 
 A template for a task manager is hardcoded into the implementation 
 (`org.apache.flink.kubernetes.client.DefaultKubernetesClient`).
 
@@ -35,7 +36,7 @@ Only `StreamTransformation.minResources` is used for a pod template.
 TBD
 
 ## Kubernetes Resource Management
-Resource management uses a default service account every pod contains. It should has admin privileges to be able 
+Resource management uses a default service account every pod contains. It should have admin privileges to be able 
 to create and delete pods:
 ```
 kubectl create clusterrolebinding serviceaccounts-cluster-admin \
@@ -51,6 +52,11 @@ Prepare a package first:
 Then in needs to be containerized:
 ```cd flink-contrib/docker-flink/
 sh build.sh --from-local-dist --image-name flink-mmx
+```
+And uploaded to gcp (for example):
+```
+docker tag flink-mmx gcr.io/metamarkets-prod-xpn-host/flink-mmx
+gcloud docker -- push  gcr.io/metamarkets-prod-xpn-host/flink-mmx
 ```
 If minikube is used then a container image should be uploaded into minikube node. 
 So before building a container image a docker env is supposed to be exported:
