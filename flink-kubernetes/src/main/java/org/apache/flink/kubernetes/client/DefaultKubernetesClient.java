@@ -125,6 +125,11 @@ public class DefaultKubernetesClient implements KubernetesClient {
 		}
 	}
 
+	/**
+	 * Terminates a cluster pod.
+	 * @param resourceID cluster pod id in terms of flink
+	 * @throws KubernetesClientException
+	 */
 	@Override
 	public void terminateClusterPod(ResourceID resourceID) throws KubernetesClientException {
 		final String podName = getPodName(resourceID);
@@ -133,6 +138,10 @@ public class DefaultKubernetesClient implements KubernetesClient {
 		podResourceProfiles.remove(podName);
 	}
 
+	/**
+	 * Stops and cleans up a cluster.
+	 * @param clusterId cluster id
+	 */
 	@Override
 	public void stopAndCleanupCluster(String clusterId) {
 		LOG.info("Stopping the cluster and deleting all its task manager pods");

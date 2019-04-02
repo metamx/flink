@@ -45,6 +45,7 @@ import java.util.UUID;
 /**
  * Kubernetes specific {@link ClusterDescriptor} implementation.
  * This class is responsible for cluster creation from scratch
+ * and communication with its api
  */
 public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
 
@@ -63,44 +64,26 @@ public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
 		this.client = client;
 	}
 
-	private String generateClusterId() {
-		return CLUSTER_ID_PREFIX + UUID.randomUUID();
-	}
-
 	@Override
 	public String getClusterDescription() {
 		return CLUSTER_DESCRIPTION;
 	}
 
-	private ClusterClient<String> createClusterEndpoint(Endpoint clusterEndpoint, String clusterId) throws Exception {
-
-		Configuration configuration = new Configuration(this.options.getConfiguration());
-		configuration.setString(JobManagerOptions.ADDRESS, clusterEndpoint.getAddress());
-		configuration.setInteger(JobManagerOptions.PORT, clusterEndpoint.getPort());
-		return new RestClusterClient<>(configuration, clusterId);
-	}
-
 	@Override
 	public ClusterClient<String> retrieve(String clusterId) throws ClusterRetrieveException {
 		try {
-			Endpoint clusterEndpoint = this.client.getResetEndpoint(clusterId);
-			return this.createClusterEndpoint(clusterEndpoint, clusterId);
+			Endpoint clusterEndpoint = client.getResetEndpoint(clusterId);
+			return createClusterEndpoint(clusterEndpoint, clusterId);
 		} catch (Exception e) {
-			this.client.logException(e);
-			throw new ClusterRetrieveException("Could not create the RestClusterClient.", e);
+			throw new ClusterRetrieveException("Could not create the RestClusterClient", e);
 		}
 	}
 
 	@Override
 	public ClusterClient<String> deploySessionCluster(ClusterSpecification clusterSpecification)
 		throws ClusterDeploymentException {
-
-		String clusterId = this.generateClusterId();
-
-		//TODO: add arguments
-		final List<String> args = Arrays.asList();
-
-		return this.deployClusterInternal(clusterId, args);
+		String clusterId = generateClusterId();
+		return deployClusterInternal(clusterId, null);
 	}
 
 	@Override
@@ -108,16 +91,45 @@ public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
 		throw new NotImplementedException();
 	}
 
+	@Override
+	public void killCluster(String clusterId) throws FlinkException {
+		try {
+			client.stopAndCleanupCluster(clusterId);
+		} catch (Exception e) {
+			client.logException(e);
+			throw new FlinkException(String.format("Could not create Kubernetes cluster [%s]", clusterId));
+		}
+	}
+
+	@Override
+	public void close() {
+		try {
+			client.close();
+		} catch (Exception e) {
+			LOG.error("Failed to close Kubernetes client: {}", e.toString());
+		}
+	}
+
+	private String generateClusterId() {
+		return CLUSTER_ID_PREFIX + UUID.randomUUID();
+	}
+
+	private ClusterClient<String> createClusterEndpoint(Endpoint clusterEndpoint, String clusterId) throws Exception {
+		Configuration configuration = new Configuration(options.getConfiguration());
+		configuration.setString(JobManagerOptions.ADDRESS, clusterEndpoint.getAddress());
+		configuration.setInteger(JobManagerOptions.PORT, clusterEndpoint.getPort());
+		return new RestClusterClient<>(configuration, clusterId);
+	}
+
 	@Nonnull
 	private ClusterClient<String> deployClusterInternal(String clusterId, List<String> args) throws ClusterDeploymentException {
 		try {
-			Endpoint clusterEndpoint = this.client.createClusterService();
-			this.client.createClusterPod(null);
-			return this.createClusterEndpoint(clusterEndpoint, clusterId);
+			Endpoint clusterEndpoint = client.createClusterService();
+			client.createClusterPod(null);
+			return createClusterEndpoint(clusterEndpoint, clusterId);
 		} catch (Exception e) {
-			this.client.logException(e);
-			this.tryKillCluster(clusterId);
-			throw new ClusterDeploymentException("Could not create Kubernetes cluster " + clusterId, e);
+			tryKillCluster(clusterId);
+			throw new ClusterDeploymentException(String.format("Could not create Kubernetes cluster [%s]", clusterId), e);
 		}
 	}
 
@@ -126,29 +138,9 @@ public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
 	 */
 	private void tryKillCluster(String clusterId) {
 		try {
-			this.killCluster(clusterId);
+			killCluster(clusterId);
 		} catch (Exception e) {
-			this.client.logException(e);
-		}
-	}
-
-	@Override
-	public void killCluster(String clusterId) throws FlinkException {
-		try {
-			this.client.stopAndCleanupCluster(clusterId);
-		} catch (Exception e) {
-			this.client.logException(e);
-			throw new FlinkException("Could not create Kubernetes cluster " + clusterId);
-		}
-	}
-
-	@Override
-	public void close() {
-		try {
-			this.client.close();
-		} catch (Exception e) {
-			this.client.logException(e);
-			LOG.error("failed to close client, exception {}", e.toString());
+			LOG.error("Could not kill a cluster [{}]: {}", clusterId, e.toString());
 		}
 	}
 }
