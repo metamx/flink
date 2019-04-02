@@ -19,7 +19,7 @@
 package org.apache.flink.kubernetes.client;
 
 /**
- * represent a endpoint.
+ * Represents an endpoint.
  * */
 public class Endpoint {
 

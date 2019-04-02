@@ -50,11 +50,6 @@ public interface KubernetesClient extends AutoCloseable {
 	void stopAndCleanupCluster(String clusterId);
 
 	/**
-	 * Log exception.
-	 * */
-	void logException(Exception e);
-
-	/**
 	 * Retrieval rest endpoint of the giving flink clusterId.
 	 */
 	Endpoint getResetEndpoint(String flinkClusterId);

@@ -158,11 +158,6 @@ public class DefaultKubernetesClient implements KubernetesClient {
 	}
 
 	@Override
-	public void logException(Exception e) {
-		LOG.error("Exception occurred", e);
-	}
-
-	@Override
 	public Endpoint getResetEndpoint(String flinkClusterId) {
 		throw new NotImplementedError();
 	}

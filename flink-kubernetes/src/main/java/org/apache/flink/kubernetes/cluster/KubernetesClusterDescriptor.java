@@ -29,6 +29,7 @@ import org.apache.flink.configuration.JobManagerOptions;
 import org.apache.flink.kubernetes.FlinkKubernetesOptions;
 import org.apache.flink.kubernetes.client.Endpoint;
 import org.apache.flink.kubernetes.client.KubernetesClient;
+import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.util.FlinkException;
 
@@ -38,7 +39,6 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.annotation.Nonnull;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -96,8 +96,7 @@ public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
 		try {
 			client.stopAndCleanupCluster(clusterId);
 		} catch (Exception e) {
-			client.logException(e);
-			throw new FlinkException(String.format("Could not create Kubernetes cluster [%s]", clusterId));
+			throw new FlinkException(String.format("Could not create Kubernetes cluster [%s]", clusterId), e);
 		}
 	}
 
@@ -125,7 +124,7 @@ public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
 	private ClusterClient<String> deployClusterInternal(String clusterId, List<String> args) throws ClusterDeploymentException {
 		try {
 			Endpoint clusterEndpoint = client.createClusterService();
-			client.createClusterPod(null);
+			client.createClusterPod(ResourceProfile.UNKNOWN);
 			return createClusterEndpoint(clusterEndpoint, clusterId);
 		} catch (Exception e) {
 			tryKillCluster(clusterId);
