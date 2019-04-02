@@ -1,0 +1,36 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: flink-jobmanager
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: jobmanager
+    spec:
+      containers:
+      - name: jobmanager
+        image: flink-mmx:latest
+        imagePullPolicy: IfNotPresent
+        args:
+        - jobmanager
+        ports:
+        - containerPort: 6123
+          name: rpc
+        - containerPort: 6124
+          name: blob
+        - containerPort: 6125
+          name: query
+        - containerPort: 8081
+          name: ui
+        env:
+        - name: JOB_MANAGER_RPC_ADDRESS
+          value: flink-jobmanager
+        - name: FLINK_CLASS_TO_RUN
+          value: org.apache.flink.kubernetes.entrypoint.KubernetesSessionClusterEntrypoint
+        - name: FLINK_NAMESPACE
+          value: default
+        - name: FLINK_TM_IMAGE
+          value: flink-mmx:latest
